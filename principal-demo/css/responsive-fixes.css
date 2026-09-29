@@ -1,0 +1,19 @@
+.app-main,.page-shell,.summary-grid,.dashboard-grid,.panel,.summary-card,.chart-box,.page-head>div{min-width:0;max-width:100%}
+.app-main,.page-shell{overflow-x:hidden}
+.brand-logo{min-width:0;flex-shrink:1}
+.summary-value{overflow-wrap:anywhere}
+@media(max-width:767px){
+  .page-head{align-items:flex-start;flex-wrap:wrap}
+  .action-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .action-tile{min-width:0}
+  .role-switch{min-width:105px;max-width:112px;padding:.45rem 1.7rem .45rem .5rem}
+}
+@media(max-width:420px){
+  .summary-grid{grid-template-columns:minmax(0,1fr)}
+  .summary-value{font-size:1.05rem}
+  .header-tools{gap:5px}
+  .header-tools>.icon-button{display:none}
+  .brand-logo{width:145px}
+  .page-head>.btn{width:100%}
+  .panel-pad{padding:17px}
+}
