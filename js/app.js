@@ -7,6 +7,7 @@
   const future = ["Transport","Admissions","Library"];
   let state = loadState();
   let currentView = state.role === "Principal" ? "Dashboard" : "Dashboard";
+  let currentStudentId = null;
   let charts = [];
   let modal;
 
@@ -18,6 +19,11 @@
   function initials(name){ return name.split(" ").map(x=>x[0]).slice(0,2).join(""); }
   function destroyCharts(){ charts.forEach(c=>c.destroy()); charts=[]; }
   function roleUser(){ return state.role==="Principal"?{name:"Principal",label:"School Management",initials:"PR"}:state.role==="Teacher"?{name:"Ms. Priya",label:"Teacher",initials:"MP"}:{name:"Farah Hussain",label:"Parent",initials:"FH"}; }
+  function slug(value){return value.toLowerCase().replace(/\s+/g,"-");}
+  function viewFromSlug(value){return [...navMain,...future].find(v=>slug(v)===value)||"Dashboard";}
+  function routeFor(view=currentView,studentId=null){return `#/${slug(state.role)}/${slug(view)}${studentId?`/${studentId}`:""}`;}
+  function navigate(view,studentId=null,replace=false){currentView=view;currentStudentId=studentId;const route=routeFor(view,studentId);if(replace)history.replaceState({route},"",route);else if(location.hash!==route)history.pushState({route},"",route);studentId?renderStudentProfile(studentId):renderApp();}
+  function applyRoute(){const parts=location.hash.replace(/^#\/?/,"").split("/").filter(Boolean);const role=parts[0]?parts[0][0].toUpperCase()+parts[0].slice(1):state.role;if(["Principal","Teacher","Parent"].includes(role))state.role=role;currentView=viewFromSlug(parts[1]||"dashboard");currentStudentId=currentView==="Students"&&parts[2]?parts[2]:null;persist();currentStudentId?renderStudentProfile(currentStudentId):renderApp();}
 
   function header(){ const u=roleUser(); return `<header class="app-header"><div class="d-flex align-items-center gap-2"><button class="icon-button d-md-none" data-action="mobile-menu" aria-label="Open menu"><i class="bi bi-list"></i></button><img class="brand-logo" src="assets/logo/learnatorium-logo.png" alt="Learnatorium Primary School"></div><div class="header-tools"><button class="icon-button" aria-label="Notifications" data-view="Announcements"><i class="bi bi-bell"></i><span class="notification-dot"></span></button><label class="d-flex align-items-center gap-2"><span class="small text-muted desktop-only">View As</span><select id="roleSwitcher" class="role-switch" aria-label="View application as"><option ${state.role==="Principal"?"selected":""}>Principal</option><option ${state.role==="Teacher"?"selected":""}>Teacher</option><option ${state.role==="Parent"?"selected":""}>Parent</option></select></label><div class="user-meta text-end"><strong>${u.name}</strong><small class="d-block text-muted">${u.label}</small></div><div class="dropdown"><button class="avatar border-0" data-bs-toggle="dropdown" aria-label="User menu">${u.initials}</button><ul class="dropdown-menu dropdown-menu-end shadow border-0"><li><button class="dropdown-item" data-action="reset"><i class="bi bi-arrow-counterclockwise me-2"></i>Reset Demo Data</button></li></ul></div></div></header>`; }
   function sidebar(){ return `<aside class="app-sidebar"><div class="nav-label">School Management</div>${navMain.map(n=>`<button class="side-link ${currentView===n?"active":""}" data-view="${n}"><i class="bi bi-${icons[n]}"></i><span>${n}</span></button>`).join("")}<div class="nav-label mt-3">Future Modules</div>${future.map(n=>`<button class="side-link ${currentView===n?"active":""}" data-view="${n}"><i class="bi bi-${icons[n]}"></i><span>${n}</span><span class="soon">Soon</span></button>`).join("")}</aside>`; }
@@ -96,14 +102,14 @@
   function paymentModal(){const s=currentChild(),f=feeFor(s.id);openModal(`<div class="modal-header"><div><small class="eyebrow">DEMO PAYMENT</small><h2 class="modal-title">${money(f.nextInstallment)}</h2></div><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="alert alert-warning border-0"><i class="bi bi-info-circle me-2"></i>Demo payment — no actual transaction will occur.</div><label class="form-label">Payment method</label><div class="d-grid gap-2">${['UPI','Debit / Credit Card','Net Banking'].map((x,i)=>`<label class="panel p-3"><input type="radio" name="payMethod" ${i===0?'checked':''}> <span class="ms-2 fw-semibold">${x}</span></label>`).join("")}</div></div><div class="modal-footer"><button class="btn btn-brand w-100" data-action="confirm-payment"><span class="pay-label">Pay ${money(f.nextInstallment)}</span></button></div>`);}
   function completePayment(button){button.disabled=true;button.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Processing demo payment...';setTimeout(()=>{const s=currentChild(),f=feeFor(s.id);state.payments[s.id]={amount:f.nextInstallment,receipt:"LPS-REC-2026-1042",paidAt:new Date().toISOString()};persist();modal.hide();showToast("Demo payment successful");renderApp();},1000);}
 
-  document.addEventListener("change",e=>{if(e.target.id==="roleSwitcher"){state.role=e.target.value;currentView="Dashboard";persist();renderApp();}if(e.target.id==="childSwitcher"){state.childId=e.target.value;persist();renderApp();}if(["classFilter","sectionFilter"].includes(e.target.id))filterStudents();});
+  document.addEventListener("change",e=>{if(e.target.id==="roleSwitcher"){state.role=e.target.value;persist();navigate("Dashboard");}if(e.target.id==="childSwitcher"){state.childId=e.target.value;persist();renderApp();}if(["classFilter","sectionFilter"].includes(e.target.id))filterStudents();});
   document.addEventListener("input",e=>{if(e.target.id==="studentSearch")filterStudents();});
   document.addEventListener("submit",e=>{if(e.target.id==="announcementForm"){e.preventDefault();const f=new FormData(e.target);state.announcements.unshift({id:`a-${Date.now()}`,title:f.get("title"),audience:f.get("audience"),message:f.get("message"),time:"Just now"});persist();modal.hide();showToast("Announcement published");renderApp();}if(e.target.id==="homeworkForm"){e.preventDefault();const f=new FormData(e.target);const due=f.get("due");state.homework.unshift({id:`h-${Date.now()}`,className:f.get("className"),section:f.get("section"),subject:f.get("subject"),title:f.get("title"),description:f.get("description"),due:due?new Date(`${due}T00:00:00`).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):"Tomorrow",createdAt:"Just now"});persist();modal.hide();showToast("Homework published successfully");renderApp();}});
   document.addEventListener("click", e => {
     const target=e.target.closest("[data-view],[data-action],[data-student],[data-attendance]");
     if(!target)return;
-    if(target.dataset.view){ currentView=target.dataset.view; renderApp(); return; }
-    if(target.dataset.student){ renderStudentProfile(target.dataset.student); return; }
+    if(target.dataset.view){ navigate(target.dataset.view); return; }
+    if(target.dataset.student){ navigate("Students",target.dataset.student); return; }
     if(target.dataset.attendance){
       state.attendance.records[target.dataset.id]=target.dataset.attendance;
       document.querySelectorAll(`[data-id="${target.dataset.id}"]`).forEach(b=>b.classList.toggle("active",b.dataset.attendance===target.dataset.attendance));
@@ -119,8 +125,9 @@
     if(a==="pay") paymentModal();
     if(a==="confirm-payment") completePayment(target);
     if(a==="receipt") showToast("Demo receipt ready to view");
-    if(a==="reset" && confirm("Reset all presentation data to the original demo?")){ localStorage.removeItem(STORE); state=freshState(); currentView="Dashboard"; renderApp(); showToast("Demo data reset"); }
+    if(a==="reset" && confirm("Reset all presentation data to the original demo?")){ localStorage.removeItem(STORE); state=freshState(); navigate("Dashboard",null,true); showToast("Demo data reset"); }
     if(a==="parent-more") openModal(`<div class="modal-header"><h2 class="modal-title h5">More</h2><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="action-grid"><button class="action-tile" data-view="Fees" data-bs-dismiss="modal"><i class="bi bi-wallet2"></i>Fees</button><button class="action-tile" data-view="Timetable" data-bs-dismiss="modal"><i class="bi bi-calendar3"></i>Timetable</button><button class="action-tile" data-view="Exams" data-bs-dismiss="modal"><i class="bi bi-bar-chart"></i>Results</button><button class="action-tile" data-view="Homework" data-bs-dismiss="modal"><i class="bi bi-journal-text"></i>Homework</button></div></div>`,"modal-sm");
   });
-  renderApp();
+  window.addEventListener("popstate",applyRoute);
+  if(location.hash)applyRoute();else navigate("Dashboard",null,true);
 })();
