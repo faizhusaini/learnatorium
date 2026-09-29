@@ -1,0 +1,3 @@
+import {LoginForm} from "@/features/auth/login-form"; import messages from "@/messages/en.json";
+export default function Home(){return <main className="grid min-h-screen md:grid-cols-2"><section className="hidden bg-cyan-900 p-16 text-white md:flex md:flex-col md:justify-between"><strong className="text-xl">{messages.brand}</strong><div><h2 className="max-w-xl text-5xl font-semibold leading-tight">{messages.tagline}</h2><p className="mt-5 max-w-lg text-cyan-100">A secure school workspace for administrators, teachers, families, and students.</p></div><p className="text-sm text-cyan-200">Hyderabad · India</p></section><section className="flex items-center justify-center p-6"><LoginForm/></section></main>}
+
