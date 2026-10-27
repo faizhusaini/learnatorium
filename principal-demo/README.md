@@ -12,7 +12,7 @@ python -m http.server 5500 --directory principal-demo
 
 or any static HTTP server, then open `http://localhost:5500`. Internet access is needed for the Bootstrap, Bootstrap Icons, Chart.js, and Google Fonts CDNs.
 
-Use the **View As** selector to switch instantly between Principal, Teacher, and Parent experiences. Attendance, homework, announcements, child selection, and demo fee payment persist in browser storage. Use **Reset Demo Data** in the user menu to restore the original scenario.
+Use the **View As** selector to switch instantly between Principal, Teacher, and Parent experiences. Attendance, homework, announcements, child selection, demo fee payment, and homework submissions persist in browser storage. Parents can submit written work and attach up to three PDF or image files (1 MB each, 2 MB total); teachers can open the attachments and leave feedback. Use **Reset Demo Data** in the user menu to restore the original scenario.
 
 No real authentication, payment, API, database, or personal data is used. All names and records are fictional demonstration data.
 
